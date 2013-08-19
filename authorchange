@@ -1,0 +1,78 @@
+<?php
+require 'File/MARC.php';
+$closest = $_POST['closest'];
+$authornames = $_POST['author_name'];
+$ldrs=  $_POST['leader'];
+$_260bs = $_POST['260b'];
+$_260cs = $_POST['260c'];
+$_245s= $_POST['245'];
+$_020as = $_POST['020a'];
+$_020cs = $_POST['020c'];
+$_008s= $_POST['008'];
+$_947fs= $_POST['947f'];
+$_947hs= $_POST['947h'];
+$filename = $_POST['filename'];
+echo '<link rel="stylesheet" type="text/css" href="scripts/marcpreload.css" />';
+echo '<div id="header"><a href="http://localhost/marcpreload/" title="Home"><img src="/files/gateway_logo.png" alt="libALERTS logo" /></a><span id="lib">libalerts:</span> Let\'s load some MARC records!</div>';
+echo 'Filename value passed from marctest4.php:<br />';
+print_r($filename);
+echo '<hr />';
+   
+    $arraypos = -1;
+foreach($authornames as $authorname){
+    $arraypos++;
+ echo "Submitted Author name: ";
+echo $authorname . '<br/>';
+
+
+if($authorname == $closest[$arraypos]) {
+    echo '<fieldset>';
+    echo 'Success! New MARC record written.<br />';
+   
+$marc = new File_MARC_Record();
+$marc->setLeader($ldrs[$arraypos]);
+$marc->appendField(new File_MARC_Data_Field('008', array(
+        new File_MARC_Subfield('11', $_008s[$arraypos]),
+    ), null, null
+    ));
+$marc->appendField(new File_MARC_Data_Field('020', array(
+        new File_MARC_Subfield('a', str_replace('[a]: ','',$_020as[$arraypos])),
+        new File_MARC_Subfield('c', str_replace('[c]: ','',$_020cs[$arraypos])),
+    ), null, null
+    ));
+$marc->appendField(new File_MARC_Data_Field('100', array(
+        new File_MARC_Subfield('a', $closest[$arraypos]),
+    ), null, null
+    ));
+
+$marc->appendField(new File_MARC_Data_Field('245', array(
+        new File_MARC_Subfield('a', str_replace('245 10 _a','',$_245s[$arraypos]))), null, null
+    ));
+$marc->appendField(new File_MARC_Data_Field('260', array(
+        new File_MARC_Subfield('b', str_replace('[b]: ','',$_260bs[$arraypos])),
+        new File_MARC_Subfield('c', str_replace('[c]: ','',$_260cs[$arraypos])),
+    ), null, null
+    ));
+$marc->appendField(new File_MARC_Data_Field('947', array(
+        new File_MARC_Subfield('f', str_replace('[f]: ','',$_947fs[$arraypos])),
+        new File_MARC_Subfield('h', str_replace('[h]: ','',$_947hs[$arraypos])),
+    ), null, null
+));
+
+
+if($marc) {print "<strong>MARC record written to file: </strong><br />" . $marc . "<br/>";} else {echo "no records, homeslice.";}
+
+
+//line below opens file in append mode so records are added to the end! Yay!
+$fh = fopen('../output/' . $filename, 'a+');
+fwrite($fh, $marc->toRaw());
+fclose($fh);
+
+echo '</fieldset>';
+  } else {
+
+echo 'No match.';
+}
+}
+
+?>
