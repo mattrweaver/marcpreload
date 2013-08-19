@@ -1,0 +1,284 @@
+<?php
+//db connection
+require 'scripts/dbconnect.php';
+//just making sure we are using the right database.
+echo '<p style="font-size:25px;">' . $db_name . '</p>';
+echo '<script type="text/javascript">
+function setAuthor(el) {
+    var author = el.innerHTML,
+        id = el.id.replace(/^closest_/, "");
+    if (console) {
+        console.log(author);
+    }
+   // window.alert(author+id);
+  
+        document.forms["myform"].elements["auth_"+id].value = author;
+    return false;
+
+}
+</script>';
+//loads MARC library
+require 'File/MARC.php';
+
+//script for opening popup to check author name in catalog
+echo '<SCRIPT TYPE="text/javascript">
+<!--
+function popup(mylink, windowname)
+{
+if (! window.focus)return true;
+var href;
+if (typeof(mylink) == \'string\')
+   href=mylink;
+else
+   href=mylink.href;
+window.open(href, windowname, \'width=800,height=600,scrollbars=yes\');
+return false;
+}
+//-->
+</SCRIPT>';
+echo '<link rel="stylesheet" type="text/css" href="scripts/marcpreload.css" />';
+echo '<div id="header"><a href="http://localhost/marcpreload/" title="Home"><img src="/files/gateway_logo.png" alt="libALERTS logo" /></a> Let\'s load some MARC records!</div>';
+echo '<form id="myform" method="post" action="scripts/authorchange_v1.php">';
+/*
+ * Displays all authors in a marc file -- needs form input to choose file
+ */
+
+echo '<fieldset>';
+  $filename = $_FILES["marcfile"]["name"];
+  //print_r($filename);
+echo '<p style="color: #005596; font-weight: bold;">MARC file information:</p>';
+
+ if ($_FILES["marcfile"]["error"] > 0)
+  {
+  echo "Error: " . $_FILES["marcfile"]["error"] . "<br />";
+  }
+else
+  {
+  echo "File to be processed: " . $_FILES["marcfile"]["name"] . "<br />";
+  echo "Type: " . $_FILES["marcfile"]["type"] . "<br />";
+  echo "Size: " . ($_FILES["marcfile"]["size"] / 1024) . " Kb<br />";
+  echo "Stored in: " . $_FILES["marcfile"]["tmp_name"] . "<br />";
+  }
+  echo '</fieldset>';
+
+echo    '<div id="exact" style="float:right;width:50%;">';
+  $newbooks = new File_MARC('/MARC_records_directory/' . $filename);
+
+while ($record = $newbooks->next()) {
+
+// sets array of objects so items can be written to the file or eliminated
+$objarray[] = $record;
+
+    // Get authors getFields is for objects, not arrays
+    $newauthors = $record->getFields('100');
+    if ($newauthors) {
+   
+   foreach ($newauthors as $field) {
+    $author = substr($field,9);
+   
+            }
+  }
+}
+
+$objkey = -1;
+
+/*
+ *Get array of authors with subscriptions attached
+ */
+
+//Get term names for authors that have subscriptions attached.
+ 
+$subauth = mysql_query("SELECT DISTINCT tid, name FROM term_data INNER JOIN notifications_fields ON notifications_fields.value = term_data.tid where notifications_fields.field = 'tid';");
+
+/*
+ * Displays all authors in a marc file -- needs form input to choose file
+ */
+
+//$newbooks = new File_MARC('marctest.mrc');
+$newbooks = new File_MARC('F:/Departments/TECH/Acquisitions/New Books/forlibalerts/' . $filename);
+//$record is an object
+while ($record = $newbooks->next()) {
+    $objkey++;   
+    $newauthors = $record->getFields('100');
+    if ($newauthors) {
+   foreach ($newauthors as $field) {
+    
+    $author = substr($field,9);
+   
+//is the following line necessary?  
+mysql_data_seek($subauth,0);
+
+while($rows = mysql_fetch_array($subauth, MYSQL_ASSOC)){
+    
+    $pairs[] = implode('|',$rows);
+    foreach($pairs as $pair){
+
+  $final = explode('|',$pair);
+ }
+   if(in_array($author,$rows)){
+    $newrecords[] = $objarray[$objkey];
+      echo '<span style="color:red;font-size:20px;border: dashed 5px red;">Match found for ' . $author . '</span>';
+      echo '</div>';
+   } else {
+    echo    '<div id="matching" style="float:left;width:50%;">';
+ foreach($rows as $row){
+$i = 0;
+/*
+ * Calculate the edit distance with levenshtein()
+ * Example from http://us2.php.net/manual/en/function.levenshtein.php
+ */               
+                //evaluate Edit distance                
+                // no shortest distance found, yet
+                $shortest = -1;
+                    // calculate the distance between the input word,
+                    // and the current word
+                    $lev = levenshtein($author, $row);
+                    // check for an exact match
+                    if ($lev == 0) {
+                        // closest word is this one (exact match)
+                        $closest = $row;
+                        $shortest = 0;  //this WORKS!
+   $newrecords[] = $objarray[$objkey];
+
+                   
+                        // break out of the loop; we've found an exact match
+                    break;
+                    }
+                    // if this distance is less than the next found shortest
+                    // distance, OR if a next shortest word has not yet been found
+              
+                    if ($lev <= $shortest || $shortest < 0) {
+                        // set the closest match, and shortest distance
+                        $closest  = $row;
+                        $shortest = $lev;
+                    }
+                    
+                if ($shortest > 0 && $shortest < 5) {
+                   echo '<fieldset>';
+
+                    echo '<p>Name as it appears in MARC record: <strong>' . $author . '</strong></p>';
+           echo '<p>';
+                   echo '245 field from MARC record: <strong>' . substr($record->getField('245'), 0) . '</strong>';
+                   echo '</p>';
+                    echo 'No match in the libalerts database, but <strong>' . $author . '</strong> is close to: <a onClick="return popup(this,\'notes\')" title="Click to check the author in the catalog" href="http://catalog.westlakelibrary.org/uhtbin/cgisirsi/x/0/0/5?search_type=browse&srchfield1=AU^AUTHOR^AUTHORS^Author Processing^author&searchdata1=' . str_replace(',',' ',$final[1]) . '">' . $closest . '</a><br />';
+                    echo '<p style="background-color:yellow;padding:10px;">';
+    
+                  foreach ($record->getFields() as $tag => $subfields) {
+                  // Skip everything except for 650 fields
+                  if ($tag == '947') {
+                  foreach ($subfields->getSubfields() as $code => $value) {
+                   
+                  if($code == 'f'){
+                  $_947fs = $value;
+                  
+                  } elseif($code=='h'){
+                   $_947hs = $value;
+                  
+                  }
+                  }    
+                  } elseif($tag == '020'){
+                   foreach ($subfields->getSubfields() as $code => $value) {
+                  
+                   $isbn14 = '978';
+                  if($code == 'a' && strpos($value, $isbn14)){
+                  $_020as = $value;
+                  
+                  } elseif($code=='c'){
+                   $_020cs = $value;
+                  
+                  }
+                  }
+                  }
+                  elseif($tag == '260'){
+                   foreach ($subfields->getSubfields() as $code => $value) {
+                    if($code == 'b'){
+                  $_260bs = $value;
+                  
+                  } elseif($code=='c'){
+                   $_260cs = $value;
+                  
+                  }
+                  }
+                  }
+                  }
+                      $fieldkey = rand();
+                    echo "Click name to add <span style='background:gray;border:outset 3px black;' id='closest_{$fieldkey}' onClick='setAuthor(this)'>{$closest}</span>";
+                  
+                    echo 'Click the link to check the catalog for this author<br />';
+                           echo '<input  type="hidden" name="fieldkey[]" value="' . $fieldkey . '" />';
+                 echo '<input id="cls_' . $fieldkey . '" type="hidden" name="closest[]" value="' . $closest . '" />';
+                   echo '<input class="authors" id="auth_' . $fieldkey . '"  type="text" name="author_name[]" value="' . $author . '" />';
+                   echo '<input id="100_' . $fieldkey . '" type="hidden" name="oldauth[]" value="' . $author .'" />';
+                   
+                   //passed as arrays
+                   echo '<input id="ldr_' . $fieldkey . '" type="hidden" name="leader[]" value="' . $ldr = $record->getLeader() . '" />';
+                   echo '<input id="010_' . $fieldkey  . '" type="hidden" name="008[]" value="' . $_008 = $record->getField('008') .'" />';
+                    echo '<input id="020_' . $fieldkey  . '" type="hidden" name="020a[]" value="' . $_020as . '" />';
+                    echo '<input id="020_' . $fieldkey  . '" type="hidden" name="020c[]" value="' . $_020cs . '" />';
+                   echo '<input id="245_' . $fieldkey  . '" type="hidden" name="245[]" value="' . $_245 = substr($record->getField('245'),9) .'" />';
+                  //echo '<input id="260_' . $fieldkey . '" type="hidden" name="260[]" value="' . $_260 = $record->getField('260') .'" />';
+                  echo '<input id="260_' . $fieldkey . '" type="hidden" name="260b[]" value="' . $_260bs .'" />';
+                  echo '<input id="260_' . $fieldkey . '" type="hidden" name="260c[]" value="' . $_260cs .'" />';
+                 
+                   /*echo '<fieldset style="background-color: gray;">';
+                   echo $_947fs;
+                   echo '<br />';
+                   echo $_947hs;
+                  echo '</fieldset>';*/
+                   echo '<input id="947_' . $fieldkey  . '" type="hidden" name="947f[]" value="' . $_947fs .'" />';
+                   echo '<input id="947_' . $fieldkey  . '" type="hidden" name="947h[]" value="' . $_947hs .'" />';
+                    echo '<input id="file_' . $fieldkey  . '" type="hidden" name="filename" value="libalerts_' . $filename . '" />';
+       echo '</fieldset>';        
+   }
+                    } 
+                echo '</fieldset>';
+                echo '</div>';
+                }
+                }
+   }     
+    }        
+    }
+   
+    echo '<hr />';
+  echo "<fieldset>Records to be written the file:<br />";
+   if(!@$newrecords){
+    echo "No records to add.";} else {
+    foreach($newrecords as $newrecord){
+    echo '<fieldset>' . $newrecord . '</fieldset>';
+    
+   echo '<input id="newrec_' . $objkey . '" type="hidden" name="newrecord[]" value="' . $newrecord . '" />';
+          
+   }} 
+     echo "</fieldset>";
+      //print_r($objarray);
+    //echo '<input type="hidden" name="newbooks" value="' . $newbooks . '" />';
+         echo '<div style="clear:both;"><input type="checkbox" name="matches" value="no"  /> No additional matches?</div>';
+echo '<input type="submit" value="Change authors" name="submit" style="clear:both;float:left;" />';
+                    echo '</form>';    
+   
+
+//echo '<fieldset style="background: green;">' . $filename . '</fieldset>';
+
+ /*
+ *
+ * Use MARC.php to create new MARC records from the selected records.  Why not just node_save this?
+ * code below is example from http://pear.php.net/manual/en/package.fileformats.file-marc.formatting.php
+ */
+
+// Open a file for binary write access
+$filename = 'libalerts_' . $filename;
+$marc21_file = fopen('output/' . $filename, 'wb');
+ if(!@$newrecords){
+  die ("No records to add.");} else {
+  foreach($newrecords as $newrecord){
+// Iterate through the records
+    // Write each record to the file in MARC 21 format
+    fwrite($marc21_file, $newrecord->toRaw());
+}
+// Close the file
+fclose($marc21_file);
+echo '<span style="float:right;font-size:22px;">' . count($newrecords) . ' records written to the new file.</span>';
+ } 
+
+
+?>
